@@ -1,0 +1,9 @@
+import {useEffect,useRef,useState} from 'react';
+import type {PDFDocumentProxy} from 'pdfjs-dist';
+import type {DiffItem,Side} from '../../types/domain';
+import {DiffOverlay} from './DiffOverlay';
+export function PdfPage({pdf,page,side,scale,diffs}:{pdf:PDFDocumentProxy;page:number;side:Side;scale:number;diffs:DiffItem[]}){
+ const canvasRef=useRef<HTMLCanvasElement>(null);const [size,setSize]=useState({width:595,height:842});const [loading,setLoading]=useState(true);
+ useEffect(()=>{let cancelled=false;let renderTask:ReturnType<Awaited<ReturnType<typeof pdf.getPage>>['render']>|undefined;setLoading(true);(async()=>{const pdfPage=await pdf.getPage(page);if(cancelled)return;const vp=pdfPage.getViewport({scale:scale*1.12});setSize({width:vp.width,height:vp.height});const canvas=canvasRef.current;if(!canvas)return;const ratio=window.devicePixelRatio||1;canvas.width=Math.floor(vp.width*ratio);canvas.height=Math.floor(vp.height*ratio);canvas.style.width=`${vp.width}px`;canvas.style.height=`${vp.height}px`;const ctx=canvas.getContext('2d');if(!ctx)return;renderTask=pdfPage.render({canvasContext:ctx,canvas,viewport:vp,transform:ratio===1?undefined:[ratio,0,0,ratio,0,0]});await renderTask.promise;if(!cancelled)setLoading(false)})().catch(e=>{if(e?.name!=='RenderingCancelledException')console.error('PDF render failed',e)});return()=>{cancelled=true;renderTask?.cancel()}},[pdf,page,scale]);
+ return <div data-pdf-page={page} className="relative my-3 mx-auto shadow-sm border border-slate-200 bg-white" style={{width:size.width,height:size.height}}><canvas ref={canvasRef} className="absolute inset-0"/>{loading&&<div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">正在渲染第 {page} 页...</div>}<DiffOverlay items={diffs} side={side} page={page} width={size.width} height={size.height}/></div>
+}

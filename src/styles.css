@@ -1,0 +1,9 @@
+@import "tailwindcss";
+@theme { --color-primary: #2563eb; }
+* { box-sizing: border-box; }
+body { margin: 0; font-family: Inter, -apple-system, BlinkMacSystemFont, "Microsoft Yahei", "PingFang SC", sans-serif; }
+.tool-btn { @apply p-1.5 rounded-md hover:bg-slate-100 text-slate-600 transition; }
+button:focus-visible, input:focus-visible, select:focus-visible { @apply outline-2 outline-offset-2 outline-blue-500; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
