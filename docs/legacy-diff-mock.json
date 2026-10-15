@@ -1,0 +1,40 @@
+[
+  {
+    "id": "d1",
+    "type": "TEXT_MODIFY",
+    "title": "文本修改",
+    "description": "付款期限由 30 日调整为 45 日",
+    "before": {"page": 1, "rect": {"x": 0.08, "y": 0.285, "width": 0.79, "height": 0.06}},
+    "after": {"page": 1, "rect": {"x": 0.08, "y": 0.285, "width": 0.79, "height": 0.06}}
+  },
+  {
+    "id": "d2",
+    "type": "SEAL_ADD",
+    "title": "印章新增",
+    "description": "乙方签章区域新增公司公章",
+    "after": {"page": 1, "rect": {"x": 0.46, "y": 0.55, "width": 0.31, "height": 0.19}}
+  },
+  {
+    "id": "d3",
+    "type": "TEXT_DELETE",
+    "title": "文本删除",
+    "description": "“传真”字段已删除",
+    "before": {"page": 1, "rect": {"x": 0.08, "y": 0.78, "width": 0.28, "height": 0.045}}
+  },
+  {
+    "id": "d4",
+    "type": "DATE_CHANGE",
+    "title": "日期变化",
+    "description": "签署日期发生变化",
+    "before": {"page": 1, "rect": {"x": 0.08, "y": 0.63, "width": 0.35, "height": 0.05}},
+    "after": {"page": 1, "rect": {"x": 0.08, "y": 0.63, "width": 0.35, "height": 0.05}}
+  },
+  {
+    "id": "d5",
+    "type": "FORMAT_CHANGE",
+    "title": "格式变化",
+    "description": "页脚合同编号位置变化",
+    "before": {"page": 1, "rect": {"x": 0.26, "y": 0.91, "width": 0.5, "height": 0.04}},
+    "after": {"page": 1, "rect": {"x": 0.26, "y": 0.91, "width": 0.5, "height": 0.04}}
+  }
+]

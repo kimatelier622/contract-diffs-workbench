@@ -1,0 +1,62 @@
+{
+  "status": "success",
+  "message": "比对完成，发现 2 处差异",
+  "report": {
+    "summary": {
+      "total_changes": 2,
+      "text_changes": 1,
+      "table_changes": 1,
+      "stamps_found": 0,
+      "suspicious_additions": 0,
+      "comparison_time_ms": 2285
+    },
+    "changes": [
+      {
+        "id": "change_000",
+        "type": "text_modified",
+        "risk_level": "high",
+        "pre_location": {"page": 4, "bbox": [69, 384, 485, 396], "block_index": -1},
+        "post_location": {"page": 4, "bbox": [67, 265, 464, 283], "block_index": -1},
+        "pre_text": "签约日期:签约日期:",
+        "post_text": "签约日期:2026.06.08签约日期:",
+        "diff": [
+          {"op": "equal", "text": "签约日期:", "pre_text": "", "post_text": ""},
+          {"op": "insert", "text": "2026.06.08", "pre_text": "", "post_text": ""},
+          {"op": "equal", "text": "签约日期:", "pre_text": "", "post_text": ""}
+        ],
+        "table_changes": [],
+        "description": "新增「2026.06.08」"
+      },
+      {
+        "id": "change_001",
+        "type": "table_cell_changed",
+        "risk_level": "medium",
+        "pre_location": null,
+        "post_location": null,
+        "pre_text": "GM0500P Q=5001/h Il=4Bar PVC 380V 0.37KW 变频电机",
+        "post_text": "GM0500P Q=5001/h H=4Bar PVC 380V 0.37KW 变频电机",
+        "diff": [
+          {"op": "equal", "text": "GM0500P Q=5001/h ", "pre_text": "", "post_text": ""},
+          {"op": "replace", "text": "", "pre_text": "Il", "post_text": "H"},
+          {"op": "equal", "text": "=4Bar PVC 380V 0.37KW 变频电机", "pre_text": "", "post_text": ""}
+        ],
+        "table_changes": [
+          {
+            "row": 5,
+            "col": 2,
+            "pre_value": "GM0500P Q=5001/h Il=4Bar PVC 380V 0.37KW 变频电机",
+            "post_value": "GM0500P Q=5001/h H=4Bar PVC 380V 0.37KW 变频电机",
+            "diff": [
+              {"op": "equal", "text": "GM0500P Q=5001/h ", "pre_text": "", "post_text": ""},
+              {"op": "replace", "text": "", "pre_text": "Il", "post_text": "H"},
+              {"op": "equal", "text": "=4Bar PVC 380V 0.37KW 变频电机", "pre_text": "", "post_text": ""}
+            ]
+          }
+        ],
+        "description": "表格第 6 行第 3 列由「Il」修改为「H」"
+      }
+    ],
+    "pre_highlighted": "……盖章后生效。\n\n签约日期：\n\n盖章：\n\n……",
+    "post_highlighted": "……盖章后生效。\n\n签约日期：<span class=\"hl-add\">2026.06.08</span>\n\n盖章：\n\n……"
+  }
+}
