@@ -4,9 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview --host 0.0.0.0"
+    "dev": "vite --host 0.0.0.0 --mode development",
+    "dev:local": "vite --host 0.0.0.0 --mode development",
+    "dev:uat": "vite --host 0.0.0.0 --mode uat",
+    "build": "npm run build:prod",
+    "build:local": "tsc -b && vite build --mode development",
+    "build:uat": "tsc -b && vite build --mode uat",
+    "build:prod": "tsc -b && vite build --mode prod",
+    "preview": "vite preview --host 0.0.0.0 --mode prod"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.59.0",

@@ -3,6 +3,7 @@ import {adaptCompareResponse} from '../api/compareResponseAdapter';
 import {mockData} from './test';
 
 const mockReport = adaptCompareResponse(mockData);
+const mockAssetUrl = (fileName: string) => `${import.meta.env.BASE_URL}mock/${fileName}`;
 
 function version(contract: number, number: number) {
   const id = `contract-${contract}-v${number}`;
@@ -15,13 +16,13 @@ function version(contract: number, number: number) {
       id: `${id}-before`,
       role: 'before' as const,
       fileName: `合同${contract}_用印前.pdf`,
-      pdfUrl: '/mock/before.pdf'
+      pdfUrl: mockAssetUrl('before.pdf')
     },
     after: {
       id: `${id}-after`,
       role: 'after' as const,
       fileName: `合同${contract}_用印后.pdf`,
-      pdfUrl: '/mock/after.pdf'
+      pdfUrl: mockAssetUrl('after.pdf')
     },
     diffs: mockReport.diffs,
     report: mockReport

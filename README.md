@@ -16,13 +16,30 @@ npm run dev
 npm run build
 ```
 
-浏览器打开 <http://localhost:5173>。默认使用 `src/mock` 中的数据及 `public/mock` 中的示例合同。
+浏览器打开 <http://localhost:5173/contract-diff/>。默认 `npm run dev` 使用 local 环境以及 `src/mock`、`public/mock` 中的示例数据。
+
+环境命令：
+
+| 环境 | 启动/构建命令 | 环境文件 | 数据源 |
+| --- | --- | --- | --- |
+| local | `npm run dev`、`npm run dev:local`、`npm run build:local` | `.env.local` | 本地 Mock |
+| uat | `npm run dev:uat`、`npm run build:uat` | `.env.uat` | 后端 API |
+| prod | `npm run build`、`npm run build:prod` | `.env.prod` | 后端 API |
 
 环境变量示例见 `.env.example`：
 
 - `VITE_USE_API=false`：使用本地 Mock 数据。
+- `VITE_BASE_PATH=/contract-diff/`：三套环境统一使用的前端部署基础路径。
 - `VITE_USE_API=true`：请求业务后端。
 - `VITE_API_BASE_URL=/api`：配置业务 API 根路径。
+
+例如部署到 `https://example.com/contract-diff/`：
+
+```env
+VITE_BASE_PATH=/contract-diff/
+```
+
+Vite 构建资源、Mock PDF、PDF.js CMap 和标准字体都会基于该路径加载。业务 API 仍由 `VITE_API_BASE_URL` 单独配置。
 
 ## 技术栈一致性
 
@@ -103,7 +120,41 @@ npm run build
 - 固定 100ms 不能代表程序触发的滚动已经结束；
 - Viewer 已计算可见页，但上层 `onPageVisible` 当前为空实现。
 
-建议采用“页码 + 页内比例”映射，并区分用户滚动、同步写入和差异定位。
+#### 规划方案：内容锚点同步
+
+代码 Diff 工具会先建立新旧内容的对应关系，再同步对齐后的视觉行；单侧新增的代码会在另一侧形成虚拟空白，因此后续相同内容仍处在同一视觉位置。PDF Canvas 无法方便地在页面内部插入空白行，更适合使用内容锚点建立分段滚动映射：
+
+```text
+before 文档位置 A ↔ after 文档位置 A'
+before 文档位置 B ↔ after 文档位置 B'
+
+beforeY 位于 A～B 的比例
+→ 映射到 afterY 的 A'～B' 之间
+```
+
+若用印后在两个锚点之间新增了多页，滚动旧文档时可跨过新增区段并继续对齐后续内容；用户滚动到新文档的单侧新增区段时，旧文档停留在最近的有效锚点，并提示该区段仅存在于一侧。差异点击定位继续使用各差异自身的 `pre_location/post_location`，不依赖同步滚动映射。
+
+理想情况下，后端需要提供已匹配内容块或对齐区段，例如：
+
+```ts
+interface AlignmentAnchor {
+  pre_location: DiffLocation;
+  post_location: DiffLocation;
+  pre_block_index: number;
+  post_block_index: number;
+}
+```
+
+当前后端暂时无法提供有效的 `block_index/block_number`，所有位置均为 `-1`，因此现阶段不能建立可靠的块级内容锚点，也不能达到 WebStorm 代码 Diff 那样的严格语义同步。已有双侧差异 bbox 只能作为稀疏锚点，无法覆盖大段无差异内容和单侧新增区段。
+
+现阶段同步滚动按以下顺序降级：
+
+1. 有可靠双侧差异位置时，可作为有限的局部定位参考，但不假设 `block_index=-1` 具有排序意义。
+2. 页数和页面结构接近时，后续可升级为“页码 + 页内比例”映射。
+3. 无法建立页面对应关系时，继续使用当前整份文档滚动百分比。
+4. 始终区分用户滚动、同步写入和差异定位，避免程序滚动相互覆盖。
+
+待后端能够返回匹配块、对齐区段或有效 block 编号后，再实现分段锚点映射；前端不根据文本相似度自行重做 OCR 或 AI 对齐。
 
 ### P0：差异导航和定位状态不稳定
 
@@ -166,7 +217,7 @@ Viewer 通过 `ResizeObserver` 读取每栏可用宽度，将工具栏的 100% �
 3. 用旋转/CropBox 样本验证现有 PDF.js viewport 坐标转换，并扩展多矩形位置。
 4. 重做差异定位状态，移除双重定时器和单侧 `scrollTarget` 偏好。
 5. 增加单侧缺失坐标提示。
-6. 将同步滚动改为页码加页内比例映射，防止程序滚动互相触发。
+6. 在后端 block 编号仍为 `-1` 的阶段，将同步滚动升级为页码加页内比例映射；后端提供内容对齐信息后再实现分段锚点映射。
 7. 在缩放后保持视口中心。
 8. 完成真实 PDF 获取、请求取消、鉴权和 object URL 释放。
 9. 根据确认后的截图完成 P0 视觉还原和基础响应式检查。
