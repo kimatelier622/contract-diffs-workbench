@@ -1,4 +1,58 @@
 /** 后端比对结果 DTO。字段名保持与接口一致，禁止在 UI 中直接使用。 */
+export interface ApiResponseDto<T> {
+  data: T | null;
+  errorCode: string;
+  errorMsg: string;
+  success: number;
+}
+
+export interface ContractDetailWithVersionsDto {
+  flowInfo: ContractFlowInfoDto;
+  /** 后端按时间倒序返回。 */
+  versions: ContractBatchVersionDto[];
+}
+
+export interface ContractFlowInfoDto {
+  batchCount: number;
+  compareResult: string;
+  createBy: string;
+  createTime: string;
+  currentVersion: string;
+  filePath: string;
+  flowId: string;
+  flowName: string;
+  flowNo: string;
+  title: string;
+}
+
+export interface ContractBatchVersionDto {
+  compareTime: string;
+  failCount: number;
+  riskCount: number;
+  sourceList: ContractAttachmentDto[];
+  status: number;
+  successCount: number;
+  totalCount: number;
+  version: string;
+  versionId: string;
+}
+
+export interface ContractAttachmentDto {
+  diffsCount: number;
+  id: string;
+  name: string;
+  no: string;
+  postId: string;
+  postUrl: string;
+  preId: string;
+  preUrl: string;
+  rawJson: string | null;
+  /** 兼容后端部分环境使用的字段名。正式契约优先使用 rawJson。 */
+  rowJson?: string | null;
+  status: number;
+  taskStatus: number;
+}
+
 export interface CompareResponseDto {
   status: 'success';
   message: string;
@@ -37,6 +91,7 @@ export interface ChangeDto {
 }
 
 export interface DiffLocationDto {
+  /** 真实 AI 接口使用 0-based 页码；adapter 会转换为 PDF.js 使用的 1-based 页码。 */
   page: number;
   /** [x0, y0, x1, y1]；当前按最终 PDF CropBox 的左上角 point 坐标接入。 */
   bbox: [number, number, number, number];

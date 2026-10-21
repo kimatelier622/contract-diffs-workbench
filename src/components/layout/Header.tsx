@@ -1,10 +1,17 @@
 import {Building2, ChevronDown, CircleCheck, UserRound} from 'lucide-react';
 import logoUrl from '@/assets/brand/logo.svg';
-import type {ComparisonVersion} from '@/types/domain.ts';
+import type {ComparisonBatch, ComparisonStatus} from '@/types/domain.ts';
+
+const STATUS_LABELS: Record<ComparisonStatus, string> = {
+  processing: '处理中',
+  completed: '已完成',
+  failed: '失败',
+  partial: '部分成功'
+};
 
 export function Header({versionName, versions, versionId, onVersionChange}: {
   versionName: string;
-  versions: ComparisonVersion[];
+  versions: ComparisonBatch[];
   versionId: string;
   onVersionChange: (id: string) => void
 }) {
@@ -22,14 +29,15 @@ export function Header({versionName, versions, versionId, onVersionChange}: {
       className="relative inline-flex h-7 items-center rounded bg-slate-100 pl-2.5 pr-7 text-xs text-slate-500">对比版本：<select
       aria-label="对比版本" className="appearance-none bg-transparent font-medium text-slate-600 outline-none"
       value={versionId} onChange={e => onVersionChange(e.target.value)}>{versions.length ? versions.map(
-        v => <option key={v.id} value={v.id}>{v.name}</option>) :
+        v => <option key={v.id} value={v.id}>{v.name}（{v.totalCount} 份文件 · {
+          STATUS_LABELS[v.status]}）</option>) :
       <option value="">{versionName}</option>}</select><ChevronDown size={12}
       className="pointer-events-none absolute right-2" /></label></div>
-    <div className="flex shrink-0 items-center gap-4 text-[14px] text-slate-600">
+    <div className="flex shrink-0 items-center gap-4 text-[13px] text-slate-600">
       <span className="hidden items-center gap-1.5 lg:inline-flex">
-      <Building2 size={14} className="text-blue-600" /> 无锡宝通科技股份有限公司</span>
+      <Building2 size={13} className="text-blue-600" /> 无锡宝通科技股份有限公司</span>
       <span className="inline-flex items-center gap-1.5">
-        <UserRound size={14} className="text-blue-600" /> 张小风 </span>
+        <UserRound size={13} className="text-blue-600" /> 张小风 </span>
     </div>
   </header>
 }

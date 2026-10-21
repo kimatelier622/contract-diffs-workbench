@@ -1,4 +1,5 @@
 export type Side = 'before' | 'after';
+export type ComparisonStatus = 'processing' | 'completed' | 'failed' | 'partial';
 export type DiffType = 'TEXT_MODIFY' | 'TEXT_ADD' | 'TEXT_DELETE' | 'TABLE_CHANGE' | 'SEAL_ADD' |
   'SEAL_DELETE' | 'DATE_CHANGE' | 'FORMAT_CHANGE' | 'UNKNOWN';
 export type RiskLevel = 'HIGH' | 'MEDIUM' | 'LOW' | 'UNKNOWN';
@@ -51,5 +52,24 @@ export interface ComparisonReport {
   afterHighlighted:string;
 }
 export interface ContractFile { id:string; fileName:string; pdfUrl:string; pageCount?:number; role:Side }
-export interface ComparisonVersion { id:string; name:string; createdAt:string; status:'completed'|'processing'|'failed'; before:ContractFile; after:ContractFile; diffs:DiffItem[]; report?:ComparisonReport }
+export interface ComparisonVersion { id:string; name:string; createdAt:string; status:ComparisonStatus; before:ContractFile; after:ContractFile; diffs:DiffItem[]; report?:ComparisonReport }
 export interface ContractRecord { id:string; name:string; contractNo:string; versions:ComparisonVersion[] }
+export interface ComparisonDocument { id:string; name:string; contractNo:string; comparison:ComparisonVersion }
+export interface ComparisonBatch {
+  id:string;
+  name:string;
+  createdAt:string;
+  status:ComparisonStatus;
+  failCount:number;
+  riskCount:number;
+  successCount:number;
+  totalCount:number;
+  documents:ComparisonDocument[];
+}
+export interface ContractWorkspace {
+  id:string;
+  name:string;
+  contractNo:string;
+  currentVersion:string;
+  versions:ComparisonBatch[];
+}

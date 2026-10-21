@@ -16,22 +16,28 @@ npm run dev
 npm run build
 ```
 
-浏览器打开 <http://localhost:5173/contract-diff/>。默认 `npm run dev` 使用 local 环境以及 `src/mock`、`public/mock` 中的示例数据。
+浏览器打开 <http://localhost:5173/contract-diff/?flowId=FLOW_ID>。默认 `npm run dev` 使用 local 环境并调用合同详情接口；仅在明确设置 `VITE_USE_API=false` 时使用 `src/mock`、`public/mock` 中的示例数据。
+
+UAT/Prod 从 URL 查询参数读取合同流程 ID，例如：
+
+```text
+https://example.com/contract-diff/?flowId=FLOW_ID
+```
 
 环境命令：
 
 | 环境 | 启动/构建命令 | 环境文件 | 数据源 |
 | --- | --- | --- | --- |
-| local | `npm run dev`、`npm run dev:local`、`npm run build:local` | `.env.local` | 本地 Mock |
+| local | `npm run dev`、`npm run dev:local`、`npm run build:local` | `.env.local` | 后端 API（经 Vite 代理） |
 | uat | `npm run dev:uat`、`npm run build:uat` | `.env.uat` | 后端 API |
 | prod | `npm run build`、`npm run build:prod` | `.env.prod` | 后端 API |
 
 环境变量示例见 `.env.example`：
 
-- `VITE_USE_API=false`：使用本地 Mock 数据。
+- `VITE_USE_API=false`：仅在需要离线演示时使用本地 Mock 数据。
 - `VITE_BASE_PATH=/contract-diff/`：三套环境统一使用的前端部署基础路径。
 - `VITE_USE_API=true`：请求业务后端。
-- `VITE_API_BASE_URL=/api`：配置业务 API 根路径。
+- `VITE_API_BASE_URL=/`：同源部署时从站点根路径请求 `/ai-api/api/...`；跨域部署时配置为后端服务源地址。
 
 例如部署到 `https://example.com/contract-diff/`：
 
@@ -40,6 +46,10 @@ VITE_BASE_PATH=/contract-diff/
 ```
 
 Vite 构建资源、Mock PDF、PDF.js CMap 和标准字体都会基于该路径加载。业务 API 仍由 `VITE_API_BASE_URL` 单独配置。
+
+开发服务器通过一条正则规则，将 `/ai-api/*` 和 `/filebase/*` 原样代理到 `https://uatbims.boton-tech.com` 下的同名路径。该配置只在 `vite dev` 生效；UAT/Prod 静态部署服务器需要配置相同路径的反向代理。详情接口失败时页面保留本地 Mock 工作台内容，并在左侧显示错误和重新获取入口。
+
+接口返回的 `https://.../filebase/*` 或 `https://.../ai-api/*` 绝对链接会在 adapter 中转换为同源相对路径。例如 `https://uatbims.boton-tech.com/filebase/api/index/downloadFile2?id=1` 会转换为 `/filebase/api/index/downloadFile2?id=1`，确保 PDF.js 请求经过代理而不是直接触发浏览器 CORS。
 
 ## 技术栈一致性
 
@@ -83,7 +93,7 @@ Vite 构建资源、Mock PDF、PDF.js CMap 和标准字体都会基于该路径�
 | 加载与错误态 | 基础完成 | 有合同查询和 PDF 加载错误文本 |
 | 大 PDF 按需渲染 | 基础完成 | 仅渲染视口附近页面，远离视口时释放 Canvas backing store |
 | 旋转页/CropBox | 部分完成 | Overlay 已使用 viewport 变换，仍缺三类 PDF 的完整验证 |
-| 真实 API 联调 | 部分完成 | 已有 CompareResponse DTO、adapter 和可取消的报告请求入口，版本/文件接口仍待确认 |
+| 真实 API 联调 | 部分完成 | 已接入按 `flowId` 查询合同详情、批次版本和附件，`rawJson` 经 adapter 转为页面差异模型；鉴权与 PDF 地址生命周期仍待联调 |
 | 请求取消和 object URL 生命周期 | 未完成 | Blob 方法未接入 Viewer，也没有 revoke 流程 |
 | 核心交互测试 | 未实现 | 当前没有测试脚本或自动化用例 |
 
@@ -91,7 +101,7 @@ Vite 构建资源、Mock PDF、PDF.js CMap 和标准字体都会基于该路径�
 
 ### P0：PDF 坐标协议尚未闭环
 
-当前运行时标注统一来自 `src/mock/test.ts` 的 `CompareResponse`。`bbox` 暂按 `[x0, y0, x1, y1]`、1-based 页码、最终 PDF CropBox 左上角 point 坐标解释，并通过 `page.view` 和 `viewport.convertToViewportRectangle` 映射到 SVG。转换层仍保留 `[0..1]` 左上角归一化坐标兼容能力，旧数据已归档到 `docs/legacy-diff-mock.json`，不再参与渲染。
+真实接口的 `bbox` 按 `[x0, y0, x1, y1]`、0-based 页码、最终 PDF CropBox 左上角 point 坐标解释；adapter 先将页码转换为前端 1-based，再通过 `page.view` 和 `viewport.convertToViewportRectangle` 映射到 SVG。`src/mock/test.ts` 的旧示例仍使用 1-based 页码，转换层也保留 `[0..1]` 左上角归一化坐标兼容能力，旧数据已归档到 `docs/legacy-diff-mock.json`，不再参与渲染。
 
 以下契约仍须后端最终确认，否则复杂 PDF 仍可能偏移：
 
@@ -163,19 +173,29 @@ interface AlignmentAnchor {
 - Store 的 `scrollTarget` 只保存一侧，双侧定位又由工作区 effect 补做，职责重复。
 - 单侧无坐标时没有明确的用户提示。
 
-### P0：真实 API 仍是演示入口
+### P0：真实 API 已接入合同详情，仍待联调闭环
 
-已增加独立 `CompareResponseDto` 与 adapter，能够映射 snake_case、风险等级、字符 diff、表格单元格变化、双侧位置和统计摘要；运行时 Mock 已统一使用正式的 `pre_value/post_value/diff` 字段。当前仍缺少：
+已接入 `GET /ai-api/api/contract/attach/compare/flow/{flowId}/detail-with-versions`。页面从查询参数 `flowId` 读取合同流程 ID，请求支持 TanStack Query 的 `AbortSignal` 取消。版本、文件、PDF 地址和对比数据均来自这一接口。adapter 保留后端的“合同流程 → 批次版本 → 附件列表”层级，并解析每个附件的 `rawJson`（兼容 `rowJson`）；字段为空、格式错误或未完成时，该附件仍可展示文件和状态，差异列表降级为空。
 
-- 按业务单号获取比对版本；
-- 独立版本详情；
-- 独立差异列表与统计；
-- CompareResponse 的运行时 schema 校验；
+当前映射规则：
+
+- `flowId`、`flowNo` 和 `title/flowName` 映射合同流程信息；
+- `versionId`、`version` 和 `compareTime` 映射批次版本，版本下拉展示 `totalCount` 文件数；
+- 每个批次的 `sourceList` 只作为该版本的合同文件列表，不跨版本合并；
+- `preId/preUrl`、`postId/postUrl` 分别映射两侧 PDF；
+- 真实接口差异位置的 `page` 为 0-based，adapter 统一加 1 后再与 PDF.js 页面匹配；
+- 批次 `status` 和附件 `sourceList[].status` 分别映射，`0/1/2/3` 对应处理中/已完成/失败/部分成功；
+- 单文件处理中时每 5 秒轮询同一个详情接口；失败或部分成功时保留可用内容，并在对比区域中央显示状态悬浮条；
+- 后端版本保持时间倒序，页面默认选择第一项最新版本。
+
+当前仍缺少或待确认：
+
+- 后端完整响应示例，以及 `success` 成功值是否固定为整数 `1`；
+- `rawJson` 在处理中是否可能为 `null`，以及失败记录的 URL 字段是否可能为空；
+- CompareResponse 的完整运行时 schema 校验（当前仅做必要字段守卫）；
 - 授权头、cookie 或临时地址刷新策略；
 - Blob URL 接入和 `URL.revokeObjectURL()`；
 - 后端 `type`、`risk_level`、CharDiff 完整枚举及坐标协议的最终确认。
-
-`fetchPdfBlobUrl` 已存在，但尚未被 Viewer 使用。
 
 ### 已修复：PDF 渲染性能与缩放基准
 
@@ -212,7 +232,7 @@ Viewer 通过 `ResizeObserver` 读取每栏可用宽度，将工具栏的 100% �
 
 ### P0：正确性和可交付
 
-1. 与后端确认页码基数、单位、坐标原点、页面宽高、CropBox/MediaBox、旋转和转换后 PDF `fileId`。
+1. 与后端继续确认坐标单位、坐标原点、页面宽高、CropBox/MediaBox、旋转和转换后 PDF `fileId`；页码基数已确认真实接口为 0-based。
 2. 根据最终接口枚举收紧已增加的 API DTO 与 adapter，并加入运行时 schema 校验。
 3. 用旋转/CropBox 样本验证现有 PDF.js viewport 坐标转换，并扩展多矩形位置。
 4. 重做差异定位状态，移除双重定时器和单侧 `scrollTarget` 偏好。

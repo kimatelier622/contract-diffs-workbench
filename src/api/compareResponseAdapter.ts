@@ -11,7 +11,7 @@ import type {
 } from '../types/domain';
 
 export interface CompareResponseAdapterOptions {
-  /** 待后端确认；样例使用 1-based 页码。 */
+  /** 输入数据的页码基准；真实接口为 0-based，旧 Mock 为 1-based。 */
   pageBase?: 0 | 1;
   /** 待后端确认；样例 bbox 当前按最终 PDF CropBox 左上角 point 坐标解释。 */
   coordinateSpace?: Exclude<PdfCoordinateSpace, 'normalized-top-left'>;
@@ -23,6 +23,7 @@ const typeMap: Record<string, {type: DiffType; title: string}> = {
   text_deleted: {type: 'TEXT_DELETE', title: '文本删除'},
   table_cell_changed: {type: 'TABLE_CHANGE', title: '表格变化'},
   stamp_added: {type: 'SEAL_ADD', title: '印章新增'},
+  stamp_detected: {type: 'SEAL_ADD', title: '印章识别'},
   seal_added: {type: 'SEAL_ADD', title: '印章新增'},
   stamp_deleted: {type: 'SEAL_DELETE', title: '印章删除'},
   seal_deleted: {type: 'SEAL_DELETE', title: '印章删除'},
@@ -35,6 +36,7 @@ function adaptRiskLevel(value: string): RiskLevel {
   if (normalized === 'high') return 'HIGH';
   if (normalized === 'medium') return 'MEDIUM';
   if (normalized === 'low') return 'LOW';
+  if (normalized === 'normal') return 'LOW';
   return 'UNKNOWN';
 }
 
